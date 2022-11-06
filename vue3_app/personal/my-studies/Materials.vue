@@ -1,0 +1,153 @@
+<template>
+	<view class="materials-list">
+		<view class="" v-if="listPage.length">
+			<view class="materials-item" v-for="item in listPage" :key="item.id">
+				<view class="collection-item-book-right">
+					<view class="collection-item-right-title">{{ item.name }}</view>
+					<view class="collection-item-right-content">
+						<view class="collection-item-right-type-name">
+							{{ item.oneCateName }}
+						</view>
+						<view class="collection-item-right-type-time">
+							{{ item.createTime }}
+						</view>
+					</view>
+				</view>
+			</view>
+			<u-loadmore class="loadmore" :status="loadStatus" icon-type="flower" :load-text="loadText" />
+		</view>
+		<view class="" v-else>
+			<NoState type="book" :isPage="true">
+				<template #text>
+					<view>暂无资料！</view>
+				</template>
+			</NoState>
+		</view>
+	</view>
+</template>
+
+<script setup>
+	import {
+		ref,
+		onBeforeMount
+	} from 'vue'
+	import {
+		onLoad,
+		onReachBottom,
+		onPullDownRefresh
+	} from "@dcloudio/uni-app";
+	import {
+		listForKnowledgeRecordPage
+	} from '../Personal.api.ts'
+	import NoState from '@/components/NoState.vue'
+	const loadText = ref({
+		loading: '正在加载',
+		nomore: '没有更多了'
+	})
+	const loadStatus = ref('nomore')
+	let params = {
+		pageNo: 1,
+		pageSize: 10
+	}
+	const listPage = ref([])
+	onBeforeMount(async () => {
+		await listForKnowledgeRecordPage(params).then(res => {
+			listPage.value = res.result.records
+		})
+	})
+	onReachBottom(async () => {
+		loadStatus.value = 'loading'
+		params.pageNo++
+		await listForKnowledgeRecordPage(params).then((res) => {
+			listPage.value.push(...res.result.records)
+			if (!res.result.records.length) {
+				loadStatus.value = 'nomore'
+			} else {
+				loadStatus.value = 'loadmore'
+			}
+		})
+	})
+	onPullDownRefresh(async () => {
+		params.pageNo = 1
+		await listForKnowledgeRecordPage(params).then(res => {
+			listPage.value = res.result.records
+		})
+		uni.stopPullDownRefresh()
+	})
+</script>
+
+<style scoped lang="scss">
+	.materials-list {
+		margin-top: 38rpx;
+
+		.materials-item {
+			margin-bottom: 32rpx;
+
+			width: 100%;
+			background: #FFFFFF;
+			box-shadow: 0rpx 20rpx 40rpx 0rpx rgba(0, 0, 0, 0.1);
+			border-radius: 12rpx;
+			padding: 32rpx 24rpx;
+			display: flex;
+			justify-content: space-between;
+
+			.collection-item-book-right {
+				margin-left: 24rpx;
+				flex: 1;
+				display: flex;
+				justify-content: space-between;
+				flex-direction: column;
+
+				.collection-item-right-title {
+					font-size: 30rpx;
+					font-family: PingFang-SC-Heavy, PingFang-SC;
+					font-weight: 800;
+					color: #303133;
+					line-height: 48rpx;
+
+					white-space: pre-line;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-box-orient: vertical;
+					-webkit-line-clamp: 2;
+					overflow: hidden;
+				}
+
+				.collection-item-right-number {
+					font-size: 24rpx;
+					font-family: PingFangSC-Regular, PingFang SC;
+					font-weight: 400;
+					color: #909399;
+					line-height: 34rpx;
+				}
+
+				.collection-item-right-type-name {
+					padding: 0rpx 16rpx;
+					height: 40rpx;
+					background: linear-gradient(90deg, #29A28A 0%, #4CDC90 100%);
+					border-radius: 0rpx 12rpx 0rpx 12rpx;
+					text-align: center;
+					font-size: 24rpx;
+					font-family: PingFangSC-Regular, PingFang SC;
+					font-weight: 400;
+					color: #FFFFFF;
+					line-height: 40rpx;
+				}
+			}
+			.collection-item-right-content{
+				margin-top: 12rpx;
+				display: flex;
+				align-items: center;
+				.collection-item-right-type-time{
+					margin-left: 24rpx;
+					font-size: 24rpx;
+					font-family: PingFangSC-Regular, PingFang SC;
+					font-weight: 400;
+					color: #909399;
+					line-height: 34rpx;
+					flex: 0 0 50%;
+				}
+			}
+		}
+	}
+</style>
